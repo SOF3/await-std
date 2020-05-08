@@ -1,0 +1,5 @@
+name: await-std
+author: SOFe
+antigen: SOFe\AwaitStd
+versiom: 0.1.0
+api: [3.12.0]
