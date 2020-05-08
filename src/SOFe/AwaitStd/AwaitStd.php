@@ -5,7 +5,7 @@ namespace SOFe\AwaitStd;
 use Closure;
 use Generator;
 use pocketmine\event;
-use pocketmine\event\Event;
+use pocketmine\event\EventPriority;
 use pocketmine\plugin\Plugin;
 
 final class AwaitStd {
@@ -94,7 +94,7 @@ final class AwaitStd {
 	 * @param bool $ignoreCancelled
 	 * @param Closure $toPlayer a closure that resolves an event to the relevant player, or null;
 	 * caller to this function must ensure that this closure always returns an online player
-	 * @phpstan-param Closure(Event) : Player|null $toPlayer
+	 * @phpstan-param Closure(event\Event) : Player|null $toPlayer
 	 */
 	public function awaitEvent(Player $player, string $event, int $priority, bool $ignoreCancelled, Closure $toPlayer) : Generator {
 		$key = "$event:$priority:$ignoreCancelled";
