@@ -1,0 +1,10 @@
+--- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/SOF3/await-std
+build-by-default: true
+branches:
+- master
+projects:
+  await-std:
+    path: ""
+    model: virion
+    type: library
+...
