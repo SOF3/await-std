@@ -3,6 +3,8 @@
 namespace SOFe\AwaitStd;
 
 use Exception;
+use pocketmine\plugin\Plugin;
+use pocketmine\event\player\PlayerQuitEvent;
 
 // This is NOT a RuntimeException.
 // Not handling QuitException is always a potential bug.

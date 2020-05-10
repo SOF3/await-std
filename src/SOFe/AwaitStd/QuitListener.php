@@ -2,8 +2,11 @@
 
 namespace SOFe\AwaitStd;
 
+use Closure;
 use SplObjectStorage;
+use pocketmine\Player;
 use pocketmine\event\Listener;
+use pocketmine\event\player\PlayerQuitEvent;
 
 final class QuitListener implements Listener {
 	/** @var AwaitStd $std */
@@ -11,6 +14,10 @@ final class QuitListener implements Listener {
 
 	/** @var SplObjectStorage<Closure>[] */
 	private $calls = [];
+
+	public function __construct(AwaitStd $std) {
+		$this->std = $std;
+	}
 
 	public function onQuit(PlayerQuitEvent $event) : void {
 		$player = $event->getPlayer();

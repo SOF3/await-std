@@ -4,9 +4,11 @@ namespace SOFe\AwaitStd;
 
 use Closure;
 use Generator;
+use pocketmine\Player;
 use pocketmine\event;
 use pocketmine\event\EventPriority;
 use pocketmine\plugin\Plugin;
+use pocketmine\scheduler\ClosureTask;
 
 final class AwaitStd {
 	/** @var Plugin $plugin */
@@ -43,8 +45,9 @@ final class AwaitStd {
 	 * @return Generator<mixed, mixed, mixed, event\player\PlayerChatEvent>
 	 */
 	public function nextChat(Player $player, int $priority = EventPriority::NORMAL, bool $ignoreCancelled = true) : Generator {
-		return $this->awaitEvent(event\player\PlayerChatEvent::class,
+		$event = yield $this->awaitEvent($player, event\player\PlayerChatEvent::class,
 			$priority, $ignoreCancelled, self::toPlayer());
+		return $event;
 	}
 
 	/**
@@ -64,7 +67,7 @@ final class AwaitStd {
 	 * @return Generator<mixed, mixed, mixed, event\player\PlayerInteractEvent>
 	 */
 	public function nextInteract(Player $player, int $priority = EventPriority::NORMAL, bool $ignoreCancelled = true) : Generator {
-		return $this->awaitEvent(event\player\PlayerInteractEvent::class,
+		return $this->awaitEvent($player, event\player\PlayerInteractEvent::class,
 			$priority, $ignoreCancelled, self::toPlayer());
 	}
 
@@ -74,7 +77,7 @@ final class AwaitStd {
 	 * @return Generator<mixed, mixed, mixed, event\player\EntityDamageByEntityEvent>
 	 */
 	public function nextAttack(Player $player, int $priority = EventPriority::NORMAL, bool $ignoreCancelled = true) : Generator {
-		return $this->awaitEvent(event\entity\EntityDamageByEntityEvent::class,
+		return $this->awaitEvent($player, event\entity\EntityDamageByEntityEvent::class,
 			$priority, $ignoreCancelled, static function(event\entity\EntityDamageByEntityEvent $event) : ?Player {
 				$entity = $event->getDamager();
 				if($entity instanceof Player) {
@@ -104,7 +107,7 @@ final class AwaitStd {
 
 		$onSuccess = yield;
 		$onError = yield Await::REJECT;
-		$onQuit = function(PlayerQuitEvent $quitEvent) use($event, $onError) : void {
+		$onQuit = function(event\player\PlayerQuitEvent $quitEvent) use($event, $onError) : void {
 			$onError(new QuitException($this->plugin, $event, $quitEvent));
 		};
 		$this->quitListener->add($player, $onQuit);
@@ -114,10 +117,10 @@ final class AwaitStd {
 			$this->quitListener->remove($player, $onQuit);
 			$onSuccess($event);
 		});
-		yield Await::ONCE;
+		return yield Await::ONCE;
 	}
 
-	private static function toPlayer() : Player {
+	private static function toPlayer() : Closure {
 		return static function(event\player\PlayerEvent $event) : Player {
 			return $event->getPlayer();
 		};
@@ -129,7 +132,7 @@ final class AwaitStd {
 			$event,
 			new DummyListener,
 			$priority,
-			new AwaitExecutor($toPlayer),
+			$listener,
 			$this->plugin,
 			$ignoreCancelled
 		);

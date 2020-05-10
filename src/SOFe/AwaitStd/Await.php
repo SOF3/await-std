@@ -2,5 +2,5 @@
 
 namespace SOFe\AwaitStd;
 
-class Await extends SOFe\AwaitGenerator\Await {
+class Await extends \SOFe\AwaitGenerator\Await {
 }
