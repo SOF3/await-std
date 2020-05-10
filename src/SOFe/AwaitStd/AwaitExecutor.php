@@ -51,10 +51,11 @@ final class AwaitExecutor implements EventExecutor {
 			return;
 		}
 		$hash = spl_object_hash($player);
-		if(!isset($this->queues[$hash]) || count($this->queues[$hash]) === 0) {
+		if(!isset($this->queues[$hash])) {
 			return;
 		}
-		$next = array_shift($this->queues[$hash]);
-		$next($event);
+		foreach($this->queues[$hash] as $closure) {
+			$closure($event);
+		}
 	}
 }
