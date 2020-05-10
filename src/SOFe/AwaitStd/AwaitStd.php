@@ -12,7 +12,7 @@ final class AwaitStd {
 	/** @var Plugin $plugin */
 	private $plugin;
 
-	/** @var AwaitListener[] $listeners */
+	/** @var AwaitExecutor[] $listeners */
 	private $listeners;
 
 	/** @var QuitListener */
@@ -123,13 +123,13 @@ final class AwaitStd {
 		};
 	}
 
-	private function registerListener(string $event, int $priority, bool $ignoreCancelled, Closure $toPlayer) : AwaitListener {
-		$listener = new AwaitListener($toPlayer);
+	private function registerListener(string $event, int $priority, bool $ignoreCancelled, Closure $toPlayer) : AwaitExecutor {
+		$listener = new AwaitExecutor($toPlayer);
 		$this->plugin->getServer()->getPluginManager()->registerEvent(
 			$event,
 			new DummyListener,
 			$priority,
-			new AwaitListener($toPlayer),
+			new AwaitExecutor($toPlayer),
 			$this->plugin,
 			$ignoreCancelled
 		);
@@ -139,7 +139,7 @@ final class AwaitStd {
 	/**
 	 * @internal This method is semver-exempt and only for internal use.
 	 *
-	 * @return AwaitListener[]
+	 * @return AwaitExecutor[]
 	 */
 	public function getListeners() : array {
 		return $this->listeners;

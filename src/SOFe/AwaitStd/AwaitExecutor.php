@@ -10,7 +10,7 @@ use pocketmine\event\Event;
 use pocketmine\event\Listener;
 use pocketmine\plugin\EventExecutor;
 
-final class AwaitListener implements EventExecutor {
+final class AwaitExecutor implements EventExecutor {
 	/**
 	 * @var Closure $closure
 	 * @phpstan-var Closure(Event) : Player
