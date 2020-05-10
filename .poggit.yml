@@ -7,4 +7,7 @@ projects:
     path: ""
     model: virion
     type: library
+    libs:
+      - src: SOF3/await-generator-await-generator
+        version: "^2.4.0"
 ...
