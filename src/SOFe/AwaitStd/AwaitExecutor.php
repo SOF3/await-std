@@ -54,8 +54,9 @@ final class AwaitExecutor implements EventExecutor {
 		if(!isset($this->queues[$hash])) {
 			return;
 		}
-		foreach($this->queues[$hash] as $closure) {
+		foreach($this->queues[$hash] as $key => $closure) {
 			$closure($event);
+			unset($this->queues[$hash][$key]);
 		}
 	}
 }
