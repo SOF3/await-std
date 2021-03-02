@@ -3,14 +3,11 @@
 namespace SOFe\AwaitStd;
 
 use Closure;
-use function array_shift;
 use function spl_object_hash;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\event\Event;
-use pocketmine\event\Listener;
-use pocketmine\plugin\EventExecutor;
 
-final class AwaitExecutor implements EventExecutor {
+final class AwaitExecutor {
 	/**
 	 * @var Closure $closure
 	 * @phpstan-var Closure(Event) : Player
@@ -44,7 +41,7 @@ final class AwaitExecutor implements EventExecutor {
 		}
 	}
 
-	public function execute(Listener $listener, Event $event) : void {
+	public function execute(Event $event) : void {
 		$closure = $this->toPlayer;
 		$player = $closure($event);
 		if($player === null) {

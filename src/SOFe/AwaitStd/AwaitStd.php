@@ -4,7 +4,7 @@ namespace SOFe\AwaitStd;
 
 use Closure;
 use Generator;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\event;
 use pocketmine\event\EventPriority;
 use pocketmine\plugin\Plugin;
@@ -74,7 +74,7 @@ final class AwaitStd {
 	/**
 	 * Waits until the player attacks an entity and returns the event.
 	 *
-	 * @return Generator<mixed, mixed, mixed, event\player\EntityDamageByEntityEvent>
+	 * @return Generator<mixed, mixed, mixed, event\entity\EntityDamageByEntityEvent>
 	 */
 	public function nextAttack(Player $player, int $priority = EventPriority::NORMAL, bool $ignoreCancelled = true) : Generator {
 		return $this->awaitEvent($player, event\entity\EntityDamageByEntityEvent::class,
@@ -130,11 +130,12 @@ final class AwaitStd {
 		$listener = new AwaitExecutor($toPlayer);
 		$this->plugin->getServer()->getPluginManager()->registerEvent(
 			$event,
-			new DummyListener,
+			static function(event\Event $event) use($listener) : void{
+				$listener->execute($event);
+			},
 			$priority,
-			$listener,
 			$this->plugin,
-			$ignoreCancelled
+			!$ignoreCancelled
 		);
 		return $listener;
 	}

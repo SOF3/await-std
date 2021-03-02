@@ -4,7 +4,7 @@ namespace SOFe\AwaitStd;
 
 use Closure;
 use SplObjectStorage;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerQuitEvent;
 
@@ -29,6 +29,7 @@ final class QuitListener implements Listener {
 		$hash = spl_object_hash($player);
 		if(isset($this->calls[$hash])) {
 			foreach($this->calls[$hash] as $closure) {
+				/** @var Closure $closure */
 				$closure();
 			}
 			unset($this->calls[$hash]);
