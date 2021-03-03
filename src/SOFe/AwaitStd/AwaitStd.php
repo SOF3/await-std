@@ -44,9 +44,9 @@ final class AwaitStd {
 	 *
 	 * @return Generator<mixed, mixed, mixed, event\player\PlayerChatEvent>
 	 */
-	public function nextChat(Player $player, int $priority = EventPriority::NORMAL, bool $ignoreCancelled = true) : Generator {
+	public function nextChat(Player $player, int $priority = EventPriority::NORMAL, bool $handleCancelled = false) : Generator {
 		$event = yield $this->awaitEvent($player, event\player\PlayerChatEvent::class,
-			$priority, $ignoreCancelled, self::toPlayer());
+			$priority, $handleCancelled, self::toPlayer());
 		return $event;
 	}
 
@@ -55,7 +55,7 @@ final class AwaitStd {
 	 *
 	 * @return Generator<mixed, mixed, mixed, string>
 	 */
-	public function consumeNextChat(Player $player, int $priority = EventPriority::NORMAL, bool $ignoreCancelled = true) : Generator {
+	public function consumeNextChat(Player $player, int $priority = EventPriority::NORMAL, bool $handleCancelled = false) : Generator {
 		$event = yield $this->nextChat($player);
 		$event->setCancelled();
 		return $event->getMessage();
@@ -66,9 +66,9 @@ final class AwaitStd {
 	 *
 	 * @return Generator<mixed, mixed, mixed, event\player\PlayerInteractEvent>
 	 */
-	public function nextInteract(Player $player, int $priority = EventPriority::NORMAL, bool $ignoreCancelled = true) : Generator {
+	public function nextInteract(Player $player, int $priority = EventPriority::NORMAL, bool $handleCancelled = false) : Generator {
 		return $this->awaitEvent($player, event\player\PlayerInteractEvent::class,
-			$priority, $ignoreCancelled, self::toPlayer());
+			$priority, $handleCancelled, self::toPlayer());
 	}
 
 	/**
@@ -76,9 +76,9 @@ final class AwaitStd {
 	 *
 	 * @return Generator<mixed, mixed, mixed, event\entity\EntityDamageByEntityEvent>
 	 */
-	public function nextAttack(Player $player, int $priority = EventPriority::NORMAL, bool $ignoreCancelled = true) : Generator {
+	public function nextAttack(Player $player, int $priority = EventPriority::NORMAL, bool $handleCancelled = false) : Generator {
 		return $this->awaitEvent($player, event\entity\EntityDamageByEntityEvent::class,
-			$priority, $ignoreCancelled, static function(event\entity\EntityDamageByEntityEvent $event) : ?Player {
+			$priority, $handleCancelled, static function(event\entity\EntityDamageByEntityEvent $event) : ?Player {
 				$entity = $event->getDamager();
 				if($entity instanceof Player) {
 					return $entity;
@@ -94,15 +94,15 @@ final class AwaitStd {
 	 * @param Player $player the player to watch
 	 * @param string $event the event name
 	 * @param int $priority
-	 * @param bool $ignoreCancelled
+	 * @param bool $handleCancelled
 	 * @param Closure $toPlayer a closure that resolves an event to the relevant player, or null;
 	 * caller to this function must ensure that this closure always returns an online player
 	 * @phpstan-param Closure(event\Event) : Player|null $toPlayer
 	 */
-	public function awaitEvent(Player $player, string $event, int $priority, bool $ignoreCancelled, Closure $toPlayer) : Generator {
-		$key = "$event:$priority:$ignoreCancelled";
+	public function awaitEvent(Player $player, string $event, int $priority, bool $handleCancelled, Closure $toPlayer) : Generator {
+		$key = "$event:$priority:$handleCancelled";
 		if(!isset($this->listeners[$key])) {
-			$this->listeners[$key] = $this->registerListener($event, $priority, $ignoreCancelled, $toPlayer);
+			$this->listeners[$key] = $this->registerListener($event, $priority, $handleCancelled, $toPlayer);
 		}
 
 		$onSuccess = yield;
@@ -126,7 +126,7 @@ final class AwaitStd {
 		};
 	}
 
-	private function registerListener(string $event, int $priority, bool $ignoreCancelled, Closure $toPlayer) : AwaitExecutor {
+	private function registerListener(string $event, int $priority, bool $handleCancelled, Closure $toPlayer) : AwaitExecutor {
 		$listener = new AwaitExecutor($toPlayer);
 		$this->plugin->getServer()->getPluginManager()->registerEvent(
 			$event,
@@ -135,7 +135,7 @@ final class AwaitStd {
 			},
 			$priority,
 			$this->plugin,
-			!$ignoreCancelled
+			$handleCancelled
 		);
 		return $listener;
 	}
