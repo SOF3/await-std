@@ -130,9 +130,7 @@ final class AwaitStd {
 		$listener = new AwaitExecutor($toPlayer);
 		$this->plugin->getServer()->getPluginManager()->registerEvent(
 			$event,
-			static function(event\Event $event) use($listener) : void{
-				$listener->execute($event);
-			},
+			Closure::fromCallable([$listener, "execute"]),
 			$priority,
 			$this->plugin,
 			$handleCancelled
