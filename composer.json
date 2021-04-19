@@ -1,5 +1,5 @@
 {
-	"name": "sofe/await-std",
+	"name": "sof3/await-std",
 	"type": "library",
 	"description": "Writing user-friendly PocketMine plugins fluently with await-generator style",
 	"license": "LGPL-3.0",
