@@ -1,0 +1,14 @@
+{
+	"name": "sofe/await-std",
+	"type": "library",
+	"description": "Writing user-friendly PocketMine plugins fluently with await-generator style",
+	"license": "LGPL-3.0",
+	"require": {
+		"pocketmine/pocketmine-mp": "^3.12.0"
+	},
+	"autoload": {
+		"psr-0": {
+			"SOFe\\AwaitStd\\": "src/"
+		}
+	}
+}
