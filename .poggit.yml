@@ -8,6 +8,6 @@ projects:
     model: virion
     type: library
     libs:
-      - src: SOF3/await-generator-await-generator
+      - src: SOF3/await-generator/await-generator
         version: "^3.0.0"
 ...
