@@ -31,7 +31,7 @@ final class AwaitStd {
 	}
 
 	public function sleep(int $ticks) : Generator {
-		$callback = yield Await::ONCE;
+		$callback = yield;
 		$task = new ClosureTask(static function() use($callback) : void {
 			$callback();
 		});
