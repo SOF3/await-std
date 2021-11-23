@@ -2,149 +2,100 @@
 
 namespace SOFe\AwaitStd;
 
+use AssertionError;
 use Closure;
 use Generator;
-use pocketmine\Player;
-use pocketmine\event;
+use pocketmine\event\Event;
 use pocketmine\event\EventPriority;
+use pocketmine\event\player\PlayerChatEvent;
+use pocketmine\event\player\PlayerInteractEvent;
+use pocketmine\player\Player;
 use pocketmine\plugin\Plugin;
 use pocketmine\scheduler\ClosureTask;
 
 final class AwaitStd {
-	/** @var Plugin $plugin */
-	private $plugin;
+	private Plugin $plugin;
 
-	/** @var AwaitExecutor[] $listeners */
-	private $listeners;
-
-	/** @var QuitListener */
-	private $quitListener;
+	private EventAwaiter $eventAwaiter;
 
 	public static function init(Plugin $plugin) : self {
 		$self = new self;
 		$self->plugin = $plugin;
-		$self->quitListener = new QuitListener($self);
+		$self->eventAwaiter = new EventAwaiter($plugin);
 		return $self;
 	}
 
 	private function __construct() {
 	}
 
+	/**
+	 * @return Generator<mixed, mixed, mixed, void>
+	 */
 	public function sleep(int $ticks) : Generator {
 		$callback = yield;
-		$task = new ClosureTask(static function() use($callback) : void {
-			$callback();
-		});
+		$task = new ClosureTask(fn() => $callback());
 		$this->plugin->getScheduler()->scheduleDelayedTask($task, $ticks);
 		yield Await::ONCE;
 	}
 
 	/**
-	 * Waits until the player chats and returns the event.
-	 *
-	 * @return Generator<mixed, mixed, mixed, event\player\PlayerChatEvent>
+	 * @return Generator<mixed, mixed, mixed, PlayerChatEvent>
 	 */
-	public function nextChat(Player $player, int $priority = EventPriority::NORMAL, bool $ignoreCancelled = true) : Generator {
-		$event = yield $this->awaitEvent($player, event\player\PlayerChatEvent::class,
-			$priority, $ignoreCancelled, self::toPlayer());
+	public function consumeNextChat(Player $player, int $priority = EventPriority::NORMAL) : Generator {
+		/** @var PlayerChatEvent $event */
+		$event = yield $this->awaitEvent(
+			PlayerChatEvent::class,
+			fn($event) => $event->getPlayer() === $player,
+			true,
+			$priority,
+			false,
+			$player,
+		);
+		$event->cancel();
 		return $event;
 	}
 
 	/**
-	 * Waits until the player chats, cancels the chat and returns the message.
-	 *
-	 * @return Generator<mixed, mixed, mixed, string>
+	 * @return Generator<mixed, mixed, mixed, PlayerInteractEvent>
 	 */
-	public function consumeNextChat(Player $player, int $priority = EventPriority::NORMAL, bool $ignoreCancelled = true) : Generator {
-		$event = yield $this->nextChat($player);
-		$event->setCancelled();
-		return $event->getMessage();
-	}
-
-	/**
-	 * Waits until the player interacts with a block and returns the event.
-	 *
-	 * @return Generator<mixed, mixed, mixed, event\player\PlayerInteractEvent>
-	 */
-	public function nextInteract(Player $player, int $priority = EventPriority::NORMAL, bool $ignoreCancelled = true) : Generator {
-		return $this->awaitEvent($player, event\player\PlayerInteractEvent::class,
-			$priority, $ignoreCancelled, self::toPlayer());
-	}
-
-	/**
-	 * Waits until the player attacks an entity and returns the event.
-	 *
-	 * @return Generator<mixed, mixed, mixed, event\player\EntityDamageByEntityEvent>
-	 */
-	public function nextAttack(Player $player, int $priority = EventPriority::NORMAL, bool $ignoreCancelled = true) : Generator {
-		return $this->awaitEvent($player, event\entity\EntityDamageByEntityEvent::class,
-			$priority, $ignoreCancelled, static function(event\entity\EntityDamageByEntityEvent $event) : ?Player {
-				$entity = $event->getDamager();
-				if($entity instanceof Player) {
-					return $entity;
-				} else {
-					return null;
-				}
-			});
-	}
-
-	/**
-	 * The generic version of `nextChat`, `nextAttack`, etc.
-	 *
-	 * @param Player $player the player to watch
-	 * @param string $event the event name
-	 * @param int $priority
-	 * @param bool $ignoreCancelled
-	 * @param Closure $toPlayer a closure that resolves an event to the relevant player, or null;
-	 * caller to this function must ensure that this closure always returns an online player
-	 * @phpstan-param Closure(event\Event) : Player|null $toPlayer
-	 */
-	public function awaitEvent(Player $player, string $event, int $priority, bool $ignoreCancelled, Closure $toPlayer) : Generator {
-		$key = "$event:$priority:$ignoreCancelled";
-		if(!isset($this->listeners[$key])) {
-			$this->listeners[$key] = $this->registerListener($event, $priority, $ignoreCancelled, $toPlayer);
-		}
-
-		$onSuccess = yield;
-		$onError = yield Await::REJECT;
-		$onQuit = function(event\player\PlayerQuitEvent $quitEvent) use($event, $onError) : void {
-			$onError(new QuitException($this->plugin, $event, $quitEvent));
-		};
-		$this->quitListener->add($player, $onQuit);
-		$this->listeners[$key]->queuePlayer($player, function($event) use($player, $onSuccess, $onQuit) : void {
-			// If it is no longer in QuitListener,
-			// this event couldn't be fired.
-			$this->quitListener->remove($player, $onQuit);
-			$onSuccess($event);
-		});
-		return yield Await::ONCE;
-	}
-
-	private static function toPlayer() : Closure {
-		return static function(event\player\PlayerEvent $event) : Player {
-			return $event->getPlayer();
-		};
-	}
-
-	private function registerListener(string $event, int $priority, bool $ignoreCancelled, Closure $toPlayer) : AwaitExecutor {
-		$listener = new AwaitExecutor($toPlayer);
-		$this->plugin->getServer()->getPluginManager()->registerEvent(
-			$event,
-			new DummyListener,
+	public function consumeNextInteract(Player $player, int $priority = EventPriority::NORMAL) : Generator {
+		/** @var PlayerInteractEvent $event */
+		$event = yield $this->awaitEvent(
+			PlayerInteractEvent::class,
+			fn($event) => $event->getPlayer() === $player,
+			true,
 			$priority,
-			$listener,
-			$this->plugin,
-			$ignoreCancelled
+			false,
+			$player,
 		);
-		return $listener;
+		$event->cancel();
+		return $event;
 	}
 
 	/**
-	 * @internal This method is semver-exempt and only for internal use.
-	 *
-	 * @return AwaitExecutor[]
+	 * @template T
+	 * @template U
+	 * @param Generator<mixed, mixed, mixed, T> $promise
+	 * @param U $onTimeout
+	 * @return Generator<mixed, mixed, mixed, T|U>
 	 */
-	public function getListeners() : array {
-		return $this->listeners;
+	public function timeout(Generator $promise, int $ticks, $onTimeout = null) : Generator {
+		$sleep = $this->sleep($ticks);
+		[$which, $ret] = Await::race([$sleep, $promise]);
+		return match($which) {
+			0 => $onTimeout,
+			1 => $ret,
+			default => throw new AssertionError("unreachable"),
+		};
+	}
+
+	/**
+	 * @template E of Event
+	 * @param class-string<E> $event
+	 * @param Closure(E):bool $eventFilter
+	 * @return Generator<mixed, mixed, mixed, E>
+	 */
+	public function awaitEvent(string $event, Closure $eventFilter, bool $consume, int $priority, bool $handleCancelled, object ...$disposables) : Generator {
+		return $this->eventAwaiter->await($event, $eventFilter, $consume, $priority, $handleCancelled, $disposables);
 	}
 }

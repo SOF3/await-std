@@ -2,5 +2,4 @@
 
 namespace SOFe\AwaitStd;
 
-class Await extends \SOFe\AwaitGenerator\Await {
-}
+class_alias(\SOFe\AwaitGenerator\Await::class, __NAMESPACE__ . "\\Await");
