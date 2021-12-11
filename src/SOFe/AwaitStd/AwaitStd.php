@@ -81,7 +81,7 @@ final class AwaitStd {
 	 */
 	public function timeout(Generator $promise, int $ticks, $onTimeout = null) : Generator {
 		$sleep = $this->sleep($ticks);
-		[$which, $ret] = Await::race([$sleep, $promise]);
+		[$which, $ret] = yield Await::race([$sleep, $promise]);
 		return match($which) {
 			0 => $onTimeout,
 			1 => $ret,
