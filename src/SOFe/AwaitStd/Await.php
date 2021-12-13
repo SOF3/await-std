@@ -2,4 +2,6 @@
 
 namespace SOFe\AwaitStd;
 
-class_alias(\SOFe\AwaitGenerator\Await::class, __NAMESPACE__ . "\\Await");
+use SOFe\AwaitGenerator\Await as Shaded;
+
+class_alias(Shaded::class, __NAMESPACE__ . "\\Await");
