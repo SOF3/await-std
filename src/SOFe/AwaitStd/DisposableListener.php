@@ -61,7 +61,10 @@ final class DisposableListener {
 		if(!$this->finalizers->contains($disposable)) {
 			$this->finalizers->attach($disposable, []);
 		}
-		$this->finalizers[$disposable][] = $closure;
+
+		$finalizersOfDisposable = $this->finalizers[$disposable] ?? [];
+		$finalizersOfDisposable[] = $closure;
+		$this->finalizers[$disposable] = $finalizersOfDisposable;
 	}
 
 	private function triggerFinalizers(object $object) : void {
