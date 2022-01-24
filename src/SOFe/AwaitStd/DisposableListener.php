@@ -61,6 +61,7 @@ final class DisposableListener {
 		if(!$this->finalizers->contains($disposable)) {
 			$this->finalizers->attach($disposable, []);
 		}
+
 		$finalizersOfDisposable = $this->finalizers[$disposable] ?? [];
 		$finalizersOfDisposable[] = $closure;
 		$this->finalizers[$disposable] = $finalizersOfDisposable;
