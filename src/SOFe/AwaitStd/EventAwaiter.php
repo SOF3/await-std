@@ -35,9 +35,9 @@ final class EventAwaiter {
 
 		$fail = yield Await::REJECT;
 		foreach($disposables as $disposable) {
-			$this->disposableListener->addFinalizer($disposable, function() use($disposable, $eventClass, $id, $fail) : void {
-				if(isset($this->queues[$eventClass][$id])) {
-					unset($this->queues[$eventClass][$id]);
+			$this->disposableListener->addFinalizer($disposable, function () use ($queueKey, $disposable, $id, $fail) : void {
+				if (isset($this->queues[$queueKey][$id])) {
+					unset($this->queues[$queueKey][$id]);
 					$fail(new DisposeException($this->plugin, $this->disposableListener->getEventDescription($disposable), $disposable));
 				}
 			});
