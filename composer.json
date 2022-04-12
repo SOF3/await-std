@@ -2,7 +2,7 @@
 	"name": "sof3/await-std",
 	"type": "library",
 	"description": "Writing user-friendly PocketMine plugins fluently with await-generator style",
-	"license": "LGPL-3.0",
+	"license": "Apache-2.0",
 	"require": {
 		"pocketmine/pocketmine-mp": "^4.0.0",
 		"sof3/await-generator": "^3.1.1"
