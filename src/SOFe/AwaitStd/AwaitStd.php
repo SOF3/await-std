@@ -11,7 +11,9 @@ use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\player\Player;
 use pocketmine\plugin\Plugin;
+use pocketmine\promise\Promise;
 use pocketmine\scheduler\ClosureTask;
+use SOFe\AwaitGenerator\Await;
 
 final class AwaitStd {
 	private Plugin $plugin;
@@ -97,5 +99,24 @@ final class AwaitStd {
 	 */
 	public function awaitEvent(string $event, Closure $eventFilter, bool $consume, int $priority, bool $handleCancelled, object ...$disposables) : Generator {
 		return $this->eventAwaiter->await($event, $eventFilter, $consume, $priority, $handleCancelled, $disposables);
+	}
+
+	/**
+	 * Converts a Promise to a Generator by mapping onCompletion and
+	 * onError.
+	 *
+	 * @template V The promise's value
+	 * @throws PromiseRejectedException if the promise gets rejected
+	 * @param Promise<T> $promise
+	 * @return Generator<mixed, mixed, mixed, T>
+	 */
+	public static function promiseToGenerator(Promise $promise): Generator {
+		return yield from Await::promise(
+			static function($resolve, $reject) use ($promise) {
+				$promise->onCompletion($resolve, static function() use ($reject) {
+					$reject(new PromiseRejectedException('Promise was rejected!'));
+				});
+			}
+		);
 	}
 }
