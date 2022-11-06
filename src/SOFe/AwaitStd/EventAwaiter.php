@@ -31,19 +31,18 @@ final class EventAwaiter {
 		$id = $this->nextHandlerId++;
 
 		$queueKey = $this->ensureListener($eventClass, $priority, $handleCancelled);
-		$this->queues[$queueKey][$id] = new EventQueueEntry($eventFilter, yield, $consume);
+		return yield from Await::promise(function ($resolve, $fail) use ($consume, $eventFilter, $id, $queueKey, $disposables) : void {
+			$this->queues[$queueKey][$id] = new EventQueueEntry($eventFilter, $resolve, $consume);
 
-		$fail = yield Await::REJECT;
-		foreach($disposables as $disposable) {
-			$this->disposableListener->addFinalizer($disposable, function () use ($queueKey, $disposable, $id, $fail) : void {
-				if (isset($this->queues[$queueKey][$id])) {
-					unset($this->queues[$queueKey][$id]);
-					$fail(new DisposeException($this->plugin, $this->disposableListener->getEventDescription($disposable), $disposable));
-				}
-			});
-		}
-
-		return yield Await::ONCE;
+			foreach($disposables as $disposable) {
+				$this->disposableListener->addFinalizer($disposable, function () use ($queueKey, $disposable, $id, $fail) : void {
+					if (isset($this->queues[$queueKey][$id])) {
+						unset($this->queues[$queueKey][$id]);
+						$fail(new DisposeException($this->plugin, $this->disposableListener->getEventDescription($disposable), $disposable));
+					}
+				});
+			}
+		});
 	}
 
 	/**
