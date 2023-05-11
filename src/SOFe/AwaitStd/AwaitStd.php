@@ -37,7 +37,11 @@ final class AwaitStd {
 		$callback = yield;
 		$task = new ClosureTask(fn() => $callback());
 		$this->plugin->getScheduler()->scheduleDelayedTask($task, $ticks);
-		yield Await::ONCE;
+		try{
+			yield Await::ONCE;
+		}finally{
+			$task->getHandler()?->cancel();
+		}
 	}
 
 	/**

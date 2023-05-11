@@ -37,13 +37,21 @@ final class EventAwaiter {
 		foreach($disposables as $disposable) {
 			$this->disposableListener->addFinalizer($disposable, function () use ($queueKey, $disposable, $id, $fail) : void {
 				if (isset($this->queues[$queueKey][$id])) {
-					unset($this->queues[$queueKey][$id]);
 					$fail(new DisposeException($this->plugin, $this->disposableListener->getEventDescription($disposable), $disposable));
 				}
 			});
 		}
 
-		return yield Await::ONCE;
+		$ok = false;
+		try{
+			$event = yield Await::ONCE;
+			$ok = true;
+		}finally{
+			if(!$ok || $consume){
+				unset($this->queues[$queueKey][$id]);
+			}
+		}
+		return $event;
 	}
 
 	/**
@@ -58,11 +66,8 @@ final class EventAwaiter {
 
 		$this->queues[$queueKey] = [];
 		Server::getInstance()->getPluginManager()->registerEvent($eventClass, function(Event $event) use($queueKey) : void {
-			foreach($this->queues[$queueKey] as $handlerId => $entry) {
+			foreach($this->queues[$queueKey] as $entry) {
 				if($entry->filter($event)) {
-					if($entry->isConsume()) {
-						unset($this->queues[$queueKey][$handlerId]);
-					}
 					$entry->resolve($event);
 				}
 			}
