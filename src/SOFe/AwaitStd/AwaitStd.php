@@ -14,7 +14,6 @@ use pocketmine\plugin\Plugin;
 use pocketmine\promise\Promise;
 use pocketmine\scheduler\ClosureTask;
 use SOFe\AwaitGenerator\Await;
-use Throwable;
 
 final class AwaitStd {
 	private Plugin $plugin;
@@ -81,7 +80,6 @@ final class AwaitStd {
 	 * @param Generator<mixed, mixed, mixed, T> $promise
 	 * @param U $onTimeout
 	 * @return Generator<mixed, mixed, mixed, T|U>
-	 * @throws Throwable
 	 */
 	public function timeout(Generator $promise, int $ticks, $onTimeout = null) : Generator {
 		$sleep = $this->sleep($ticks);
