@@ -34,10 +34,10 @@ final class AwaitStd {
 	 * @return Generator<mixed, mixed, mixed, void>
 	 */
 	public function sleep(int $ticks) : Generator {
-		$callback = yield;
-		$task = new ClosureTask(fn() => $callback());
-		$this->plugin->getScheduler()->scheduleDelayedTask($task, $ticks);
-		yield Await::ONCE;
+		yield from Await::promise(function(Closure $callback) use($ticks): void{
+			$task = new ClosureTask(fn() => $callback());
+			$this->plugin->getScheduler()->scheduleDelayedTask($task, $ticks);
+		});
 	}
 
 	/**
@@ -45,7 +45,7 @@ final class AwaitStd {
 	 */
 	public function consumeNextChat(Player $player, int $priority = EventPriority::NORMAL) : Generator {
 		/** @var PlayerChatEvent $event */
-		$event = yield $this->awaitEvent(
+		$event = yield from $this->awaitEvent(
 			PlayerChatEvent::class,
 			fn($event) => $event->getPlayer() === $player,
 			true,
@@ -62,7 +62,7 @@ final class AwaitStd {
 	 */
 	public function consumeNextInteract(Player $player, int $priority = EventPriority::NORMAL) : Generator {
 		/** @var PlayerInteractEvent $event */
-		$event = yield $this->awaitEvent(
+		$event = yield from $this->awaitEvent(
 			PlayerInteractEvent::class,
 			fn($event) => $event->getPlayer() === $player,
 			true,
@@ -83,7 +83,7 @@ final class AwaitStd {
 	 */
 	public function timeout(Generator $promise, int $ticks, $onTimeout = null) : Generator {
 		$sleep = $this->sleep($ticks);
-		[$which, $ret] = yield from Await::race([$sleep, $promise]);
+		[$which, $ret] = yield from Await::safeRace([$sleep, $promise]);
 		return match($which) {
 			0 => $onTimeout,
 			1 => $ret,
@@ -98,7 +98,7 @@ final class AwaitStd {
 	 * @return Generator<mixed, mixed, mixed, E>
 	 */
 	public function awaitEvent(string $event, Closure $eventFilter, bool $consume, int $priority, bool $handleCancelled, object ...$disposables) : Generator {
-		return $this->eventAwaiter->await($event, $eventFilter, $consume, $priority, $handleCancelled, $disposables);
+		return yield from $this->eventAwaiter->await($event, $eventFilter, $consume, $priority, $handleCancelled, $disposables);
 	}
 
 	/**

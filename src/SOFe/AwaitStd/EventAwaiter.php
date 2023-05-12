@@ -7,6 +7,7 @@ use Generator;
 use pocketmine\event\Event;
 use pocketmine\plugin\Plugin;
 use pocketmine\Server;
+use SOFe\AwaitGenerator\Await;
 
 final class EventAwaiter {
 	private Plugin $plugin;
@@ -31,19 +32,19 @@ final class EventAwaiter {
 		$id = $this->nextHandlerId++;
 
 		$queueKey = $this->ensureListener($eventClass, $priority, $handleCancelled);
-		$this->queues[$queueKey][$id] = new EventQueueEntry($eventFilter, yield, $consume);
 
-		$fail = yield Await::REJECT;
-		foreach($disposables as $disposable) {
-			$this->disposableListener->addFinalizer($disposable, function () use ($queueKey, $disposable, $id, $fail) : void {
-				if (isset($this->queues[$queueKey][$id])) {
-					unset($this->queues[$queueKey][$id]);
-					$fail(new DisposeException($this->plugin, $this->disposableListener->getEventDescription($disposable), $disposable));
-				}
-			});
-		}
+		return yield from Await::promise(function(Closure $resolve, Closure $fail) use ($queueKey, $id, $eventFilter, $disposables, $consume): void{
+			$this->queues[$queueKey][$id] = new EventQueueEntry($eventFilter, $resolve, $consume);
 
-		return yield Await::ONCE;
+			foreach($disposables as $disposable) {
+				$this->disposableListener->addFinalizer($disposable, function () use ($queueKey, $disposable, $id, $fail) : void {
+					if (isset($this->queues[$queueKey][$id])) {
+						unset($this->queues[$queueKey][$id]);
+						$fail(new DisposeException($this->plugin, $this->disposableListener->getEventDescription($disposable), $disposable));
+					}
+				});
+			}
+		});
 	}
 
 	/**
